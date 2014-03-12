@@ -86,7 +86,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
   bool argument_count_error(unsigned expected) {
     assert(expected != call_expr->getNumArgs());
 
-    std::ostringstream oss("Wrong number of arguments passed to variadic mruby C API. Expected: ");
+    std::ostringstream oss("Wrong number of arguments passed to variadic mruby C API. Expected: ", std::ios_base::ate);
     oss << expected << " Actual: " << call_expr->getNumArgs();
     auto& diag = ctx->getDiagnostics();
     unsigned const diag_id = diag.getCustomDiagID(DiagnosticsEngine::Error, oss.str().c_str());
@@ -196,7 +196,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
             continue;
 
           default: {
-            std::ostringstream oss("Invalid format specifier: ");
+            std::ostringstream oss("Invalid format specifier: ", std::ios_base::ate);
             oss << "'" << i << "'";
             auto& diag = ctx->getDiagnostics();
             unsigned const diag_id = diag.getCustomDiagID(DiagnosticsEngine::Error, oss.str().c_str());
