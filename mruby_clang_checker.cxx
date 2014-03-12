@@ -25,6 +25,7 @@ std::set<std::string> const mrb_functions = {
   "mrb_warn",
   "mrb_bug",
   "mrb_format",
+  "mrb_intern_cstr",
 };
 
 struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
@@ -103,6 +104,16 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
     }
 
     call_expr = exp;
+
+    if(name == "mrb_intern_cstr") {
+      if(dyn_cast<StringLiteral>(call_expr->getArg(1)->IgnoreImplicit())) {
+        auto& diag = ctx->getDiagnostics();
+        unsigned const diag_id = diag.getCustomDiagID(DiagnosticsEngine::Error, "mrb_intern_lit is preferred when getting symbol from string literal");
+        auto hint = FixItHint::CreateReplacement(SourceRange(call_expr->getLocStart(), call_expr->getLocEnd()), "mrb_intern_lit");
+        diag.Report(call_expr->getLocStart(), diag_id).AddFixItHint(hint);
+      }
+      return true;
+    }
 
     assert(d->isVariadic());
 
