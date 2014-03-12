@@ -1,6 +1,6 @@
 mruby-clang-plugin
 ==================
-clang plugin to check mruby C API calling error.
+clang plugin to check mruby C API call that could be unsafe.
 
 Howto use
 ---------
