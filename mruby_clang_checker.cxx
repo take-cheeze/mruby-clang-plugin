@@ -121,7 +121,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
       StringLiteral* lit = dyn_cast<StringLiteral>(exp->getArg(1)->IgnoreImplicit());
       if(not lit) { return true; }
 
-      StringRef const format = lit->getBytes();
+      StringRef const format = lit->getString();
       int const required_args = format_spec_arg_req(format);
 
       if(exp->getNumArgs() != (required_args + d->param_size())) {
@@ -218,7 +218,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
       }
     } else {
       if(StringLiteral* lit = dyn_cast<StringLiteral>(exp->getArg(d->param_size() - 1)->IgnoreImplicit())) {
-        StringRef const format = lit->getBytes();
+        StringRef const format = lit->getString();
         StringRef const search_str = "%S";
         unsigned extra_args_count = 0;
         for(size_t from = 0; (from = format.find(search_str, from)) != StringRef::npos; ++extra_args_count) {
