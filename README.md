@@ -4,6 +4,7 @@ clang plugin to check mruby C API call that could be unsafe.
 
 Howto use
 ---------
+ Install Clang/LLVM header with libraries.
  Build with cmake using C++ compiler that supports C++11.
  It should create `libmruby-clang-checker.so`.
 
