@@ -14,9 +14,6 @@ set(CMAKE_SHARED_LINKER_FLAGS ${llvm_ldflags})
 if(APPLE)
   set(CMAKE_MODULE_LINKER_FLAGS "${llvm_ldflags} -undefined dynamic_lookup")
 endif()
-if(LINUX)
-  # TODO
-endif()
 
 execute_process(
   COMMAND "llvm-config" "--cxxflags"
