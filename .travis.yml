@@ -1,0 +1,18 @@
+langugage: cpp
+env:
+  - LLVM_VERSION=3.4
+install:
+  - sudo add-apt-repository -y ppa:h-rayflood/llvm
+  - sudo apt-get -qq update
+  - sudo apt-get -qq install libclang-${LLVM_VERSION}-dev clang-${LLVM_VERSION} llvm-${LLVM_VERSION}-dev
+  - git clone --depth 1 'https://github.com/mruby/mruby.git'
+  - export LLVM_CONFIG="llvm-config-${LLVM_VERSION}"
+  - export MRUBY_ROOT="$(pwd)/mruby"
+  - export CXX="clang++-${LLVM_VERSION} -std=c++11"
+  - export TEST_CLANG="clang-${LLVM_VERSION}"
+  - cmake .
+script:
+  - make
+  - make test
+after_script:
+  - cat Testing/Temporary/*.log
