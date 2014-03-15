@@ -6,23 +6,27 @@
 
 #include <unordered_set>
 #include <iostream>
-#include <sstream>
 
-#include <clang/Frontend/FrontendPluginRegistry.h>
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTConsumer.h>
 #include <clang/AST/RecursiveASTVisitor.h>
+#include <clang/Frontend/CompilerInstance.h>
+#include <clang/Frontend/FrontendPluginRegistry.h>
 
 namespace {
 
 using namespace clang;
 
 struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
-  ASTContext* ctx = nullptr;
   CallExpr::arg_iterator arg;
   CallExpr* call_expr = NULL;
   StringRef expected_type;
-  // CompilerInstance& compiler;
+  CompilerInstance& compiler;
+  DiagnosticsEngine& diagnostics;
+  struct {
+    unsigned invalid_format_spec, argument_type, question_format_spec;
+    unsigned argument_count, prefer_mrb_intern_lit, must_be_pointer;
+  } diag_ids;
 
   std::unordered_set<std::string> mrb_functions = {
     "mrb_get_args",
@@ -35,14 +39,19 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
     "mrb_intern_cstr",
   };
 
-  CheckMRuby(CompilerInstance& /* inst */)
-      // : compiler(inst)
-  {}
+  CheckMRuby(CompilerInstance& inst)
+      : compiler(inst), diagnostics(inst.getDiagnostics())
+  {
+    diag_ids.invalid_format_spec = diagnostics.getCustomDiagID(DiagnosticsEngine::Error, "Invalid format specifier: '%0'");
+    diag_ids.argument_type = diagnostics.getCustomDiagID(DiagnosticsEngine::Error, "Wrong argument passed to variadic mruby C API.");
+    diag_ids.question_format_spec = diagnostics.getCustomDiagID(DiagnosticsEngine::Error, "'?' format specifier must come after '|' format specifier.");
+    diag_ids.argument_count = diagnostics.getCustomDiagID(DiagnosticsEngine::Error, "Wrong number of arguments passed to variadic mruby C API. Expected: %0, Actual: %1");
+    diag_ids.prefer_mrb_intern_lit = diagnostics.getCustomDiagID(DiagnosticsEngine::Error, "`mrb_intern_lit` is preferred when getting symbol from string literal.");
+    diag_ids.must_be_pointer = diagnostics.getCustomDiagID(DiagnosticsEngine::Error, "Variadic argument of `mrb_get_args` must be a pointer.");
+  }
 
-  void HandleTranslationUnit(ASTContext& ctx_) override {
-    ctx = &ctx_;
-    TraverseDecl(ctx->getTranslationUnitDecl());
-    ctx = nullptr;
+  void HandleTranslationUnit(ASTContext& ctx) override {
+    TraverseDecl(ctx.getTranslationUnitDecl());
   }
 
   std::string get_type_name(Expr const* exp) {
@@ -50,12 +59,9 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
   }
 
   void type_error(Expr* exp) {
-    assert(ctx);
-    auto& diag = ctx->getDiagnostics();
-    unsigned const diag_id = diag.getCustomDiagID(DiagnosticsEngine::Error, "Wrong argument passed to variadic mruby C API.");
-    std::string t = (std::string("Expected pointer of:") + expected_type).str();
-    auto hint = FixItHint::CreateReplacement(SourceRange(exp->getLocStart(), exp->getLocEnd()), t);
-    diag.Report(exp->getLocStart(), diag_id).AddFixItHint(hint);
+    std::string t = (std::string("Expected pointer of: ") + expected_type).str();
+    diagnostics.Report(exp->getLocStart(), diag_ids.argument_type)
+        << FixItHint::CreateReplacement(SourceRange(exp->getLocStart(), exp->getLocEnd()), t);
   }
 
   int format_spec_arg_req(StringLiteral const& lit) {
@@ -65,9 +71,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
       switch(i) {
         case '?':
           if(not optional_begin) {
-            auto& diag = ctx->getDiagnostics();
-            unsigned const diag_id = diag.getCustomDiagID(DiagnosticsEngine::Error, "'?' format specifier must come after '|' format specifier.");
-            diag.Report(lit.getLocStart(), diag_id);
+            diagnostics.Report(lit.getLocStart(), diag_ids.question_format_spec);
             return -1;
           }
 
@@ -96,11 +100,8 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
           expected += 2; break;
 
         default: {
-          std::ostringstream oss("Invalid format specifier: ", std::ios_base::ate);
-          oss << "'" << i << "'";
-          auto& diag = ctx->getDiagnostics();
-          unsigned const diag_id = diag.getCustomDiagID(DiagnosticsEngine::Error, oss.str().c_str());
-          diag.Report(lit.getLocStart(), diag_id);
+          char const str[] = { i, '\0' };
+          diagnostics.Report(lit.getLocStart(), diag_ids.invalid_format_spec) << str;
           return -1;
         }
       }
@@ -110,12 +111,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
 
   bool argument_count_error(unsigned expected) {
     assert(expected != call_expr->getNumArgs());
-
-    std::ostringstream oss("Wrong number of arguments passed to variadic mruby C API. Expected: ", std::ios_base::ate);
-    oss << expected << ", Actual: " << call_expr->getNumArgs();
-    auto& diag = ctx->getDiagnostics();
-    unsigned const diag_id = diag.getCustomDiagID(DiagnosticsEngine::Error, oss.str().c_str());
-    diag.Report(call_expr->getLocStart(), diag_id);
+    diagnostics.Report(call_expr->getLocStart(), diag_ids.argument_count) << expected << call_expr->getNumArgs();
     return true;
   }
 
@@ -132,10 +128,8 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
 
     if(name == "mrb_intern_cstr") {
       if(dyn_cast<StringLiteral>(call_expr->getArg(1)->IgnoreImplicit())) {
-        auto& diag = ctx->getDiagnostics();
-        unsigned const diag_id = diag.getCustomDiagID(DiagnosticsEngine::Error, "`mrb_intern_lit` is preferred when getting symbol from string literal.");
-        auto hint = FixItHint::CreateReplacement(SourceRange(call_expr->getLocStart(), call_expr->getLocEnd()), "mrb_intern_lit");
-        diag.Report(call_expr->getLocStart(), diag_id).AddFixItHint(hint);
+        diagnostics.Report(call_expr->getLocStart(), diag_ids.prefer_mrb_intern_lit)
+            << FixItHint::CreateReplacement(SourceRange(call_expr->getLocStart(), call_expr->getLocEnd()), "mrb_intern_lit");
       }
       return true;
     }
@@ -165,9 +159,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
         assert(arg != exp->arg_end());
 
         if(not arg->getType()->isPointerType()) {
-          auto& diag = ctx->getDiagnostics();
-          unsigned const diag_id = diag.getCustomDiagID(DiagnosticsEngine::Error, "Variadic argument of `mrb_get_args` must be a pointer.");
-          diag.Report(arg->getLocStart(), diag_id);
+          diagnostics.Report(arg->getLocStart(), diag_ids.must_be_pointer);
           return true;
         }
 
@@ -251,10 +243,8 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
 
     for(auto i = exp->arg_begin() + d->param_size(); i != exp->arg_end(); ++i) {
       if((*i)->getType().getAsString() != "mrb_value") {
-        auto& diag = ctx->getDiagnostics();
-        unsigned const diag_id = diag.getCustomDiagID(DiagnosticsEngine::Error, "Wrong argument passed to variadic mruby C API.");
-        auto hint = FixItHint::CreateReplacement(SourceRange(exp->getLocStart(), exp->getLocEnd()), "Expected mrb_value.");
-        diag.Report(exp->getLocStart(), diag_id).AddFixItHint(hint);
+        diagnostics.Report(exp->getLocStart(), diag_ids.argument_type)
+            << FixItHint::CreateReplacement(SourceRange(exp->getLocStart(), exp->getLocEnd()), "Expected mrb_value.");
       }
     }
 
