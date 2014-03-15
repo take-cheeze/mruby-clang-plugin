@@ -1,10 +1,17 @@
 cmake_minimum_required(VERSION 2.8)
 
 if(DEFINED ENV{LLVM_CONFIG})
-  set(LLVM_CONFIG "$ENV{LLVM_CONFIG}" CACHE FILEPATH "llvm-config used in build")
+  set(LLVM_CONFIG "$ENV{LLVM_CONFIG}")
 else()
   set(LLVM_CONFIG "llvm-config")
 endif()
+execute_process(
+  COMMAND "${LLVM_CONFIG}" "--version"
+  RESULT_VARIABLE result)
+if(NOT result EQUAL 0)
+  message(FATAL_ERROR "cannot use llvm-config: ${LLVM_CONFIG}")
+endif()
+set(LLVM_CONFIG "${LLVM_CONFIG}" CACHE FILEPATH "llvm-config used in build")
 
 if(EXISTS "$ENV{MRUBY_ROOT}")
   if(IS_ABSOLUTE "$ENV{MRUBY_ROOT}")
@@ -35,16 +42,26 @@ execute_process(
   OUTPUT_VARIABLE llvm_cxxflags
   OUTPUT_STRIP_TRAILING_WHITESPACE)
 list(APPEND CMAKE_CXX_FLAGS "${llvm_cxxflags}")
+if(UNIX)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
+endif()
 
-aux_source_directory("${CMAKE_CURRENT_SOURCE_DIR}" SRCS)
+aux_source_directory("${CMAKE_CURRENT_SOURCE_DIR}/src" SRCS)
 set(library_name "mruby-clang-checker")
 add_library("${library_name}" MODULE "${SRCS}")
 
-execute_process(
-  COMMAND "${LLVM_CONFIG}" "--bindir"
-  OUTPUT_VARIABLE llvm_bin_dir
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
 get_property(plugin_file TARGET "${library_name}" PROPERTY LOCATION)
+
+if(DEFINED ENV{TEST_CLANG})
+  set(TEST_CLANG "$ENV{TEST_CLANG}")
+else()
+  execute_process(
+    COMMAND "${LLVM_CONFIG}" "--bindir"
+    OUTPUT_VARIABLE llvm_bin_dir
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  set(TEST_CLANG "${llvm_bin_dir}/clang")
+endif()
+set(TEST_CLANG "${TEST_CLANG}" CACHE FILEPATH "clang used in test")
 
 enable_testing()
 aux_source_directory("${CMAKE_CURRENT_SOURCE_DIR}/test" TESTS)
@@ -53,7 +70,9 @@ foreach(i ${TESTS})
   add_test(
     NAME "${test_name}"
     COMMAND
-    "${llvm_bin_dir}/clang" -cc1
-    -load "${plugin_file}" -add-plugin "${library_name}"
-    "-I${MRUBY_ROOT}/include" -fsyntax-only -verify "${i}")
+    "${TEST_CLANG}"
+    -Xclang -load -Xclang "${plugin_file}" -Xclang -add-plugin -Xclang "${library_name}"
+    -ferror-limit=0
+    -fsyntax-only -Xclang -verify
+    "-I${MRUBY_ROOT}/include" "${i}")
 endforeach()
