@@ -54,7 +54,7 @@ void test_mrb_intern_lit(mrb_state* M) {
   char const str_ary[] = "test";
   mrb_intern_cstr(M, str);
   mrb_intern_cstr(M, str_ary);
-  mrb_intern_cstr(M, "test"); // expected-error {{`mrb_intern_lit` is preferred when getting symbol from string literal.}}
+  mrb_intern_cstr(M, "test"); // expected-warning {{`mrb_intern_lit` is preferred when getting symbol from string literal.}}
 }
 
 void test_funcall(mrb_state* M) {

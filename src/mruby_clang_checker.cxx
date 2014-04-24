@@ -46,7 +46,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
     diag_ids.argument_type = diagnostics.getCustomDiagID(DiagnosticsEngine::Error, "Wrong argument passed to variadic mruby C API.");
     diag_ids.question_format_spec = diagnostics.getCustomDiagID(DiagnosticsEngine::Error, "'?' format specifier must come after '|' format specifier.");
     diag_ids.argument_count = diagnostics.getCustomDiagID(DiagnosticsEngine::Error, "Wrong number of arguments passed to variadic mruby C API. Expected: %0, Actual: %1");
-    diag_ids.prefer_mrb_intern_lit = diagnostics.getCustomDiagID(DiagnosticsEngine::Error, "`mrb_intern_lit` is preferred when getting symbol from string literal.");
+    diag_ids.prefer_mrb_intern_lit = diagnostics.getCustomDiagID(DiagnosticsEngine::Warning, "`mrb_intern_lit` is preferred when getting symbol from string literal.");
     diag_ids.must_be_pointer = diagnostics.getCustomDiagID(DiagnosticsEngine::Error, "Variadic argument of `mrb_get_args` must be a pointer.");
   }
 
