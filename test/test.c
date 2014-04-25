@@ -9,7 +9,6 @@ static mrb_int mrb_i;
 static mrb_sym sym;
 static void* voidp;
 static struct mrb_data_type type;
-static int i;
 static mrb_value* argv;
 
 void test_get_args(mrb_state* M) {
@@ -17,7 +16,7 @@ void test_get_args(mrb_state* M) {
 
   // check all types
   mrb_get_args(M, MRB_ARGS_ALL_TYPE,
-               &v, &v, &v, &v, &v, &v, &b, &c, &f, &mrb_i, &sym, &voidp, &type, &b, &argv, &i, &c, &i, &argv, &mrb_i);
+               &v, &v, &v, &v, &v, &v, &b, &c, &f, &mrb_i, &sym, &voidp, &type, &b, &argv, &mrb_i, &c, &mrb_i, &argv, &mrb_i);
 
   // must succeed
   mrb_get_args(M, "|");
@@ -37,9 +36,9 @@ void test_get_args(mrb_state* M) {
   mrb_get_args(M, "n", &f); // expected-error {{Wrong argument passed to variadic mruby C API.}}
   mrb_get_args(M, "|b?", &b, &v); // expected-error {{Wrong argument passed to variadic mruby C API.}}
   mrb_get_args(M, "b?|", &f, &b); // expected-error {{'?' format specifier must come after '|' format specifier.}}
-  mrb_get_args(M, "*", &argv, &mrb_i); // expected-error {{Wrong argument passed to variadic mruby C API.}}
-  mrb_get_args(M, "s", &c, &mrb_i); // expected-error {{Wrong argument passed to variadic mruby C API.}}
-  mrb_get_args(M, "a", &argv, &i); // expected-error {{Wrong argument passed to variadic mruby C API.}}
+  mrb_get_args(M, "*", &argv, &f); // expected-error {{Wrong argument passed to variadic mruby C API.}}
+  mrb_get_args(M, "s", &c, &f); // expected-error {{Wrong argument passed to variadic mruby C API.}}
+  mrb_get_args(M, "a", &argv, &f); // expected-error {{Wrong argument passed to variadic mruby C API.}}
 
   // argument count
   mrb_get_args(M, "|", &v); // expected-error {{Wrong number of arguments passed to variadic mruby C API. Expected: 2, Actual: 3}}

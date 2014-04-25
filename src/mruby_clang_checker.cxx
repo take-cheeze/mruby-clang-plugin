@@ -198,14 +198,14 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
             expected_type = "mrb_value *";
             if(get_type_name(*arg) != expected_type) { type_error(*arg); }
             ++arg;
-            expected_type = "int";
+            expected_type = "mrb_int";
             break;
 
           case 's':
             expected_type = "char *";
             if(get_type_name(*arg) != expected_type) { type_error(*arg); }
             ++arg;
-            expected_type = "int";
+            expected_type = "mrb_int";
             break;
 
           case 'a':
