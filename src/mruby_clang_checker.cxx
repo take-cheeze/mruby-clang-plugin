@@ -116,10 +116,10 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
   }
 
   bool VisitCallExpr(CallExpr* exp) {
-    FunctionDecl* d = dyn_cast<FunctionDecl>(exp->getCalleeDecl());
+    FunctionDecl* d = dyn_cast_or_null<FunctionDecl>(exp->getCalleeDecl());
     if(not d) { return true; }
 
-    StringRef const name = dyn_cast<NamedDecl>(d)->getIdentifier()->getName();
+    StringRef const name = dyn_cast_or_null<NamedDecl>(d)->getIdentifier()->getName();
     if(not d->isExternC() or mrb_functions.find(name) == mrb_functions.end()) {
       return true;
     }
@@ -127,7 +127,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
     call_expr = exp;
 
     if(name == "mrb_intern_cstr") {
-      if(dyn_cast<StringLiteral>(call_expr->getArg(1)->IgnoreImplicit())) {
+      if(dyn_cast_or_null<StringLiteral>(call_expr->getArg(1)->IgnoreImplicit())) {
         diagnostics.Report(call_expr->getLocStart(), diag_ids.prefer_mrb_intern_lit)
             << FixItHint::CreateReplacement(SourceRange(call_expr->getLocStart(), call_expr->getLocEnd()), "mrb_intern_lit");
       }
@@ -137,7 +137,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
     assert(d->isVariadic());
 
     if(name == "mrb_get_args") {
-      StringLiteral* lit = dyn_cast<StringLiteral>(exp->getArg(1)->IgnoreImplicit());
+      StringLiteral* lit = dyn_cast_or_null<StringLiteral>(exp->getArg(1)->IgnoreImplicit());
       if(not lit) { return true; }
 
       StringRef const format = lit->getString();
@@ -222,13 +222,13 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
     }
 
     if(name == "mrb_funcall") {
-      if(IntegerLiteral* lit = dyn_cast<IntegerLiteral>(exp->getArg(3)->IgnoreImplicit())) {
+      if(IntegerLiteral* lit = dyn_cast_or_null<IntegerLiteral>(exp->getArg(3)->IgnoreImplicit())) {
         if(lit->getValue() != (exp->getNumArgs() - d->param_size())) {
           return argument_count_error(*lit->getValue().getRawData() + d->param_size());
         }
       }
     } else {
-      if(StringLiteral* lit = dyn_cast<StringLiteral>(exp->getArg(d->param_size() - 1)->IgnoreImplicit())) {
+      if(StringLiteral* lit = dyn_cast_or_null<StringLiteral>(exp->getArg(d->param_size() - 1)->IgnoreImplicit())) {
         StringRef const format = lit->getString();
         StringRef const search_str = "%S";
         unsigned extra_args_count = 0;
