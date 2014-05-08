@@ -117,10 +117,10 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
 
   bool VisitCallExpr(CallExpr* exp) {
     FunctionDecl* d = dyn_cast_or_null<FunctionDecl>(exp->getCalleeDecl());
-    if(not d) { return true; }
+    if(not d or not d->isExternC()) { return true; }
 
     StringRef const name = dyn_cast_or_null<NamedDecl>(d)->getIdentifier()->getName();
-    if(not d->isExternC() or mrb_functions.find(name) == mrb_functions.end()) {
+    if(mrb_functions.find(name) == mrb_functions.end()) {
       return true;
     }
 
