@@ -7,7 +7,7 @@ Howto use
 1. Install Clang/LLVM header with libraries.
 2. Build with cmake using C++ compiler that supports C++11.
   * Following environment variable must set in the first cmake run:
-  * Pass **$MRUBY\_ROOT** to run test. It's same as `MRUBY\_ROOT` of mruby Rakefile
+  * Pass **$MRUBY\_ROOT** to run test. It's same as `MRUBY_ROOT` of mruby Rakefile
   * Pass **$LLVM_CONFIG** to use custom **llvm-config**. If not passed it will use available **llvm-config**(which can be found with $PATH)
   * Pass **$TEST_CLANG** to use custom clang to test. It not passed it will use clang that can be found with **llvm-config**.
 3. It should create `libmruby-clang-checker.so`.
