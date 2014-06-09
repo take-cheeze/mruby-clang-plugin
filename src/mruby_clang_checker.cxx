@@ -33,6 +33,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
     "mrb_funcall",
     "mrb_raisef",
     "mrb_name_error",
+    "mrb_no_method_error",
     "mrb_warn",
     "mrb_bug",
     "mrb_format",
