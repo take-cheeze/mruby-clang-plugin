@@ -4,6 +4,7 @@ require 'fileutils'
 MRuby::Gem::Specification.new('mruby-clang-plugin') do |spec|
   spec.author = 'Takeshi Watanabe'
   spec.license = 'MIT'
+  spec.summary = 'clang plugin to check mruby API call mistakes.'
 
   spec.objs = [spec.objs[-1]]
   spec.test_objs = []
