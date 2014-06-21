@@ -7,7 +7,7 @@ install:
   - sudo apt-get -qq install libclang-${LLVM_VERSION}-dev clang-${LLVM_VERSION} llvm-${LLVM_VERSION}-dev
   - git clone --depth 1 'https://github.com/mruby/mruby.git'
   - export CXX="clang++-${LLVM_VERSION} -std=c++11"
-  - cmake -DLLVM_CONFIG="llvm-config-${LLVM_VERSION}" -DMRUBY_ROOT="$(pwd)/mruby" -DTEST_CLANG="clang-${LLVM_VERSION}" .
+  - cmake -DCMAKE_BUILD_TYPE=DEBUG -DLLVM_CONFIG="llvm-config-$LLVM_VERSION" -DMRUBY_ROOT="$(pwd)/mruby" -DTEST_CLANG="clang-$LLVM_VERSION" .
 script:
   - make
   - make test

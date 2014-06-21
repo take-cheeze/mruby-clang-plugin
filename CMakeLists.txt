@@ -5,11 +5,14 @@ if(NOT DEFINED LLVM_CONFIG)
 endif()
 execute_process(
   COMMAND "${LLVM_CONFIG}" "--version"
+  OUTPUT_VARIABLE llvm_version
+  OUTPUT_STRIP_TRAILING_WHITESPACE
   RESULT_VARIABLE result)
 if(NOT result EQUAL 0)
   message(FATAL_ERROR "cannot use llvm-config: ${LLVM_CONFIG}")
 endif()
-set(LLVM_CONFIG "${LLVM_CONFIG}" CACHE FILEPATH "llvm-config used in build")
+message(STATUS "LLVM version: ${llvm_version}")
+message(STATUS "Using llvm-config: ${LLVM_CONFIG}")
 
 if(EXISTS "${MRUBY_ROOT}")
   if(IS_ABSOLUTE "${MRUBY_ROOT}")
@@ -17,7 +20,6 @@ if(EXISTS "${MRUBY_ROOT}")
   else()
     get_filename_component(MRUBY_ROOT "${MRUBY_ROOT}" ABSOLUTE)
   endif()
-  set(MRUBY_ROOT "${MRUBY_ROOT}" CACHE PATH "mruby root path used in test")
 endif()
 
 execute_process(
@@ -57,7 +59,6 @@ if(NOT DEFINED TEST_CLANG)
     OUTPUT_STRIP_TRAILING_WHITESPACE)
   set(TEST_CLANG "${llvm_bin_dir}/clang")
 endif()
-set(TEST_CLANG "${TEST_CLANG}" CACHE FILEPATH "clang used in test")
 
 enable_testing()
 aux_source_directory("${CMAKE_CURRENT_SOURCE_DIR}/test" TESTS)
