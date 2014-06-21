@@ -1,8 +1,6 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 
-if(DEFINED ENV{LLVM_CONFIG})
-  set(LLVM_CONFIG "$ENV{LLVM_CONFIG}")
-else()
+if(NOT DEFINED LLVM_CONFIG)
   set(LLVM_CONFIG "llvm-config")
 endif()
 execute_process(
@@ -13,11 +11,11 @@ if(NOT result EQUAL 0)
 endif()
 set(LLVM_CONFIG "${LLVM_CONFIG}" CACHE FILEPATH "llvm-config used in build")
 
-if(EXISTS "$ENV{MRUBY_ROOT}")
-  if(IS_ABSOLUTE "$ENV{MRUBY_ROOT}")
-    set(MRUBY_ROOT "$ENV{MRUBY_ROOT}")
+if(EXISTS "${MRUBY_ROOT}")
+  if(IS_ABSOLUTE "${MRUBY_ROOT}")
+    set(MRUBY_ROOT "${MRUBY_ROOT}")
   else()
-    get_filename_component(MRUBY_ROOT "$ENV{MRUBY_ROOT}" ABSOLUTE)
+    get_filename_component(MRUBY_ROOT "${MRUBY_ROOT}" ABSOLUTE)
   endif()
   set(MRUBY_ROOT "${MRUBY_ROOT}" CACHE PATH "mruby root path used in test")
 endif()
@@ -50,11 +48,9 @@ aux_source_directory("${CMAKE_CURRENT_SOURCE_DIR}/src" SRCS)
 set(library_name "mruby-clang-checker")
 add_library("${library_name}" MODULE "${SRCS}")
 
-get_property(plugin_file TARGET "${library_name}" PROPERTY LOCATION)
+set(plugin_file $<TARGET_FILE:${library_name}>)
 
-if(DEFINED ENV{TEST_CLANG})
-  set(TEST_CLANG "$ENV{TEST_CLANG}")
-else()
+if(NOT DEFINED TEST_CLANG)
   execute_process(
     COMMAND "${LLVM_CONFIG}" "--bindir"
     OUTPUT_VARIABLE llvm_bin_dir
