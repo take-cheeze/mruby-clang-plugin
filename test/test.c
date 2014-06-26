@@ -1,5 +1,6 @@
 #include "mruby.h"
 #include "mruby/data.h"
+#include "mruby/error.h"
 
 static mrb_value v;
 static mrb_bool b;
@@ -72,4 +73,5 @@ void test_message_funcs(mrb_state* M) {
   mrb_name_error(M, mrb_intern_lit(M, "func"), "test", v); // expected-error {{Wrong number of arguments passed to variadic mruby C API. Expected: 3, Actual: 4}}
   mrb_raisef(M, mrb_class_get(M, "RuntimeError"), "func", 2); // expected-error {{Wrong number of arguments passed to variadic mruby C API. Expected: 3, Actual: 4}}
   mrb_bug(M, "func %S", i); // expected-error {{Wrong argument passed to variadic mruby C API.}}
+  mrb_no_method_error(M, mrb_intern_lit(M, "func"), 0, NULL, "test %S"); // expected-error {{Wrong number of arguments passed to variadic mruby C API. Expected: 6, Actual: 5}}
 }
