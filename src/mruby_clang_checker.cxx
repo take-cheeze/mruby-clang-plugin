@@ -25,7 +25,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
   DiagnosticsEngine& diagnostics;
   struct {
     unsigned invalid_format_spec, argument_type, question_format_spec;
-    unsigned argument_count, prefer_mrb_intern_lit, must_be_pointer;
+    unsigned argument_count, prefer_mrb_intern_lit, must_be_pointer, prefer_str_new_lit;
   } diag_ids;
 
   std::unordered_set<std::string> mrb_functions = {
@@ -38,6 +38,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
     "mrb_bug",
     "mrb_format",
     "mrb_intern_cstr",
+    "mrb_str_new_cstr",
   };
 
   CheckMRuby(CompilerInstance& inst)
@@ -49,6 +50,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
     diag_ids.argument_count = diagnostics.getCustomDiagID(DiagnosticsEngine::Error, "Wrong number of arguments passed to variadic mruby C API. Expected: %0, Actual: %1");
     diag_ids.prefer_mrb_intern_lit = diagnostics.getCustomDiagID(DiagnosticsEngine::Warning, "`mrb_intern_lit` is preferred when getting symbol from string literal.");
     diag_ids.must_be_pointer = diagnostics.getCustomDiagID(DiagnosticsEngine::Error, "Variadic argument of `mrb_get_args` must be a pointer.");
+    diag_ids.prefer_str_new_lit = diagnostics.getCustomDiagID(DiagnosticsEngine::Warning, "`mrb_str_new_lit` is preferred when creating string object from literal.");
   }
 
   void HandleTranslationUnit(ASTContext& ctx) override {
@@ -131,6 +133,14 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
       if(dyn_cast_or_null<StringLiteral>(call_expr->getArg(1)->IgnoreImplicit())) {
         diagnostics.Report(call_expr->getLocStart(), diag_ids.prefer_mrb_intern_lit)
             << FixItHint::CreateReplacement(SourceRange(call_expr->getLocStart(), call_expr->getLocEnd()), "mrb_intern_lit");
+      }
+      return true;
+    }
+
+    if (name == "mrb_str_new_cstr") {
+      if (dyn_cast_or_null<StringLiteral>(call_expr->getArg(1)->IgnoreImplicit())) {
+        diagnostics.Report(call_expr->getLocStart(), diag_ids.prefer_str_new_lit)
+            << FixItHint::CreateReplacement(SourceRange(call_expr->getLocStart(), call_expr->getLocEnd()), "mrb_str_new_lit");
       }
       return true;
     }

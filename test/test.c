@@ -57,6 +57,14 @@ void test_mrb_intern_lit(mrb_state* M) {
   mrb_intern_cstr(M, "test"); // expected-warning {{`mrb_intern_lit` is preferred when getting symbol from string literal.}}
 }
 
+void test_mrb_str_new_lit(mrb_state *M) {
+  char const* str = "test";
+  char const str_ary[] = "test";
+  mrb_str_new_cstr(M, str);
+  mrb_str_new_cstr(M, str_ary);
+  mrb_str_new_cstr(M, "test"); // expected-warning {{`mrb_str_new_lit` is preferred when creating string object from literal.}}
+}
+
 void test_funcall(mrb_state* M) {
   mrb_value v;
   mrb_int i;
