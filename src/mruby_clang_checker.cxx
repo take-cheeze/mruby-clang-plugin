@@ -254,8 +254,8 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
 
     for(auto i = exp->arg_begin() + d->param_size(); i != exp->arg_end(); ++i) {
       if((*i)->getType().getAsString() != "mrb_value") {
-        diagnostics.Report(exp->getLocStart(), diag_ids.argument_type)
-            << FixItHint::CreateReplacement(SourceRange(exp->getLocStart(), exp->getLocEnd()), "Expected mrb_value.");
+        diagnostics.Report(i->getLocStart(), diag_ids.argument_type)
+            << FixItHint::CreateReplacement(SourceRange(i->getLocStart(), i->getLocEnd()), "Expected `mrb_value`.");
       }
     }
 
