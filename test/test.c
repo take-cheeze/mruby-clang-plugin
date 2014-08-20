@@ -5,6 +5,7 @@
 static mrb_value v;
 static mrb_bool b;
 static char* c;
+static char const *const_str;
 static mrb_float f;
 static mrb_int mrb_i;
 static mrb_sym sym;
@@ -18,6 +19,7 @@ void test_get_args(mrb_state* M) {
   // check all types
   mrb_get_args(M, MRB_ARGS_ALL_TYPE,
                &v, &v, &v, &v, &v, &v, &b, &c, &f, &mrb_i, &sym, &voidp, &type, &b, &argv, &mrb_i, &c, &mrb_i, &argv, &mrb_i);
+  mrb_get_args(M, "zs", &const_str, &const_str, &mrb_i);
 
   // must succeed
   mrb_get_args(M, "|");
