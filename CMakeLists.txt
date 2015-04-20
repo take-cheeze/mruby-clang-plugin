@@ -22,6 +22,10 @@ if(EXISTS "${MRUBY_ROOT}")
   endif()
 endif()
 
+if(NOT DEFINED MRUBY_ROOT)
+  message(FATAL_ERROR "cannot find mruby")
+endif()
+
 execute_process(
   COMMAND "${LLVM_CONFIG}" "--includedir"
   OUTPUT_VARIABLE llvm_include_dir
