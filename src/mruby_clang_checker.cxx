@@ -271,9 +271,15 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
 };
 
 struct CheckMRubyAction : public PluginASTAction {
+#if LLVM_VERSION_MAJOR > 3 || LLVM_VERSION_MINOR >= 6
+  std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance& inst, llvm::StringRef str) override {
+    return llvm::make_unique<CheckMRuby>(inst);
+  }
+#else
   ASTConsumer* CreateASTConsumer(CompilerInstance& inst, llvm::StringRef str) override {
     return new CheckMRuby(inst);
   }
+#endif
 
   bool ParseArgs(const CompilerInstance&,
                  const std::vector<std::string>&) override {
