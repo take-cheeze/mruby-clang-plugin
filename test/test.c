@@ -1,6 +1,7 @@
 #include "mruby.h"
 #include "mruby/data.h"
 #include "mruby/error.h"
+#include "mruby/array.h"
 
 static mrb_value v;
 static mrb_bool b;
@@ -14,7 +15,7 @@ static struct mrb_data_type type;
 static mrb_value* argv;
 
 void test_get_args(mrb_state* M) {
-#define MRB_ARGS_ALL_TYPE "oCSAH&bzfin|d?*sa"
+#define MRB_ARGS_ALL_TYPE "oCS!AH&bzfin|d?*sa"
 
   // check all types
   mrb_get_args(M, MRB_ARGS_ALL_TYPE,
@@ -42,6 +43,8 @@ void test_get_args(mrb_state* M) {
   mrb_get_args(M, "*", &argv, &f); // expected-error {{Wrong argument passed to variadic mruby C API.}}
   mrb_get_args(M, "s", &c, &f); // expected-error {{Wrong argument passed to variadic mruby C API.}}
   mrb_get_args(M, "a", &argv, &f); // expected-error {{Wrong argument passed to variadic mruby C API.}}
+  mrb_get_args(M, "!"); // expected-error {{Wrong argument passed to variadic mruby C API.}}
+  mrb_get_args(M, "i!", &mrb_i); // expected-error {{Wrong argument passed to variadic mruby C API.}}
 
   // argument count
   mrb_get_args(M, "|", &v); // expected-error {{Wrong number of arguments passed to variadic mruby C API. Expected: 2, Actual: 3}}
@@ -83,5 +86,5 @@ void test_message_funcs(mrb_state* M) {
   mrb_name_error(M, mrb_intern_lit(M, "func"), "test", v); // expected-error {{Wrong number of arguments passed to variadic mruby C API. Expected: 3, Actual: 4}}
   mrb_raisef(M, mrb_class_get(M, "RuntimeError"), "func", 2); // expected-error {{Wrong number of arguments passed to variadic mruby C API. Expected: 3, Actual: 4}}
   mrb_bug(M, "func %S", i); // expected-error {{Wrong argument passed to variadic mruby C API.}}
-  mrb_no_method_error(M, mrb_intern_lit(M, "func"), 0, NULL, "test %S"); // expected-error {{Wrong number of arguments passed to variadic mruby C API. Expected: 6, Actual: 5}}
+  mrb_no_method_error(M, mrb_intern_lit(M, "func"), mrb_ary_new(M), "test %S"); // expected-error {{Wrong number of arguments passed to variadic mruby C API. Expected: 5, Actual: 4}}
 }

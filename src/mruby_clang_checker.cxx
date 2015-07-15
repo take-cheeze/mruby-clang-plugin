@@ -67,7 +67,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
         << FixItHint::CreateReplacement(SourceRange(exp->getLocStart(), exp->getLocEnd()), t);
   }
 
-  int format_spec_arg_req(StringLiteral const& lit) {
+  llvm::Optional<unsigned> format_spec_arg_req(StringLiteral const& lit) {
     unsigned expected = 0;
     bool optional_begin = false;
     for(auto const& i : lit.getString()) {
@@ -75,7 +75,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
         case '?':
           if(not optional_begin) {
             diagnostics.Report(lit.getLocStart(), diag_ids.question_format_spec);
-            return -1;
+            return llvm::None;
           }
 
           // fall through
@@ -96,6 +96,8 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
 
         case '|': optional_begin = true; break;
 
+        case '!': expected += 0; break;
+
         case 'd':
         case '*':
         case 's':
@@ -105,7 +107,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
         default: {
           char const str[] = { i, '\0' };
           diagnostics.Report(lit.getLocStart(), diag_ids.invalid_format_spec) << str;
-          return -1;
+          return llvm::None;
         }
       }
     }
@@ -152,29 +154,27 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
       if(not lit) { return true; }
 
       StringRef const format = lit->getString();
-      int const required_args = format_spec_arg_req(*lit);
+      llvm::Optional<unsigned> const required_args = format_spec_arg_req(*lit);
 
-      if(required_args == -1) {
+      if(not required_args) {
         return true; // some error occur in check
       }
 
-      if(exp->getNumArgs() != (required_args + d->param_size())) {
-        return argument_count_error((required_args + d->param_size()));
+      if(exp->getNumArgs() != (required_args.getValue() + d->param_size())) {
+        return argument_count_error((required_args.getValue() + d->param_size()));
       }
 
       arg = exp->arg_begin() + d->param_size();
 
       for(auto const& i : format) {
-        if(i == '|' and arg == exp->arg_end()) { continue; }
-
-        assert(arg != exp->arg_end());
-
-        if(not arg->getType()->isPointerType()) {
+        if(exp->arg_end() > arg and not arg->getType()->isPointerType()) {
           diagnostics.Report(arg->getLocStart(), diag_ids.must_be_pointer);
           return true;
         }
 
         switch(i) {
+          case '!': arg = arg - 1; // check previous type
+
           case 'o':
           case 'C':
           case 'S':
@@ -232,10 +232,13 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
             ++arg;
             expected_type = "mrb_int";
             break;
+
+          default: assert(false);
         }
         if(get_type_name(*arg) != expected_type) { type_error(*arg); }
         ++arg;
       }
+      assert(arg == exp->arg_end());
       return true;
     }
 
