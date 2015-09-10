@@ -31,6 +31,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
   std::unordered_set<std::string> mrb_functions = {
     "mrb_get_args",
     "mrb_funcall",
+    "mrb_funcall_id", 
     "mrb_raisef",
     "mrb_name_error",
     "mrb_no_method_error",
@@ -242,7 +243,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
       return true;
     }
 
-    if(name == "mrb_funcall") {
+    if(name == "mrb_funcall" or name == "mrb_funcall_id") {
       if(IntegerLiteral* lit = dyn_cast_or_null<IntegerLiteral>(exp->getArg(3)->IgnoreImplicit())) {
         if(lit->getValue() != (exp->getNumArgs() - d->param_size())) {
           return argument_count_error(*lit->getValue().getRawData() + d->param_size());
