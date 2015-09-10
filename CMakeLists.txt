@@ -33,6 +33,12 @@ execute_process(
 include_directories("${llvm_include_dir}")
 
 execute_process(
+  COMMAND "${LLVM_CONFIG}" "--libdir"
+  OUTPUT_VARIABLE llvm_libdir
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+link_directories("${llvm_libdir}")
+
+execute_process(
   COMMAND "${LLVM_CONFIG}" "--ldflags"
   OUTPUT_VARIABLE llvm_ldflags
   OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -53,6 +59,9 @@ endif()
 aux_source_directory("${CMAKE_CURRENT_SOURCE_DIR}/src" SRCS)
 set(library_name "mruby-clang-checker")
 add_library("${library_name}" MODULE "${SRCS}")
+target_link_libraries("${library_name}"
+  clangAST clangFrontend clangSerialization clangSema clangAnalysis clangBasic clangEdit clangLex
+  LLVMSupport)
 
 set(plugin_file $<TARGET_FILE:${library_name}>)
 

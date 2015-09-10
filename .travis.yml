@@ -16,8 +16,7 @@ install:
   - export CXX="clang++ -std=c++11"
   - cmake -DCMAKE_BUILD_TYPE=DEBUG -DLLVM_CONFIG="llvm-config-$LLVM_VERSION" -DMRUBY_ROOT="$(pwd)/mruby" -DTEST_CLANG="clang" .
 script:
-  - make
-  - make test
+  - make all test
 after_script:
   - cat Testing/Temporary/*.log
 deploy:
