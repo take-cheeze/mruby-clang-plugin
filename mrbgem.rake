@@ -6,7 +6,9 @@ MRuby::Gem::Specification.new('mruby-clang-plugin') do |spec|
   spec.objs = [spec.objs[-1]]
   spec.test_objs = []
 
-  plugin_flags = %W[-Xclang -load -Xclang "#{build.build_dir}/../host/mrbgems/mruby-clang-plugin/libmruby-clang-checker.so" -Xclang -add-plugin -Xclang mruby-clang-checker]
+  so_pos = File.expand_path "#{build.build_dir}/../host/mrbgems/mruby-clang-plugin/libmruby-clang-checker.so"
+
+  plugin_flags = %W[-Xclang -load -Xclang #{so_pos} -Xclang -add-plugin -Xclang mruby-clang-checker]
   if Object.const_defined? :HAS_HOST_MRUBY_CLANG_PLUGIN
     build.cc.flags += plugin_flags
     build.cxx.flags += plugin_flags
