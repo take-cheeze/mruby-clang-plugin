@@ -168,10 +168,17 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
       arg = exp->arg_begin() + d->param_size();
 
       for(auto const& i : format) {
+#if LLVM_VERSION_MAJOR > 4 || LLVM_VERSION_MINOR >= 0
+        if(exp->arg_end() > arg and not (*arg)->getType()->isPointerType()) {
+          diagnostics.Report((*arg)->getLocStart(), diag_ids.must_be_pointer);
+          return true;
+        }
+#else
         if(exp->arg_end() > arg and not arg->getType()->isPointerType()) {
           diagnostics.Report(arg->getLocStart(), diag_ids.must_be_pointer);
           return true;
         }
+#endif
 
         switch(i) {
           case '!': arg = arg - 1; // check previous type
@@ -263,12 +270,21 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
       }
     }
 
+#if LLVM_VERSION_MAJOR > 4 || LLVM_VERSION_MINOR >= 0
+    for(auto i = exp->arg_begin() + d->param_size(); i != exp->arg_end(); ++i) {
+      if((*i)->getType().getAsString() != "mrb_value") {
+        diagnostics.Report((*i)->getLocStart(), diag_ids.argument_type)
+            << FixItHint::CreateReplacement(SourceRange((*i)->getLocStart(), (*i)->getLocEnd()), "Expected `mrb_value`.");
+      }
+    }
+#else
     for(auto i = exp->arg_begin() + d->param_size(); i != exp->arg_end(); ++i) {
       if((*i)->getType().getAsString() != "mrb_value") {
         diagnostics.Report(i->getLocStart(), diag_ids.argument_type)
             << FixItHint::CreateReplacement(SourceRange(i->getLocStart(), i->getLocEnd()), "Expected `mrb_value`.");
       }
     }
+#endif
 
     return true;
   }
