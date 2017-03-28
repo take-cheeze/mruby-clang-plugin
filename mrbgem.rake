@@ -1,6 +1,3 @@
-require 'mkmf'
-require 'fileutils'
-
 MRuby::Gem::Specification.new('mruby-clang-plugin') do |spec|
   spec.author = 'Takeshi Watanabe'
   spec.license = 'MIT'
@@ -18,7 +15,7 @@ MRuby::Gem::Specification.new('mruby-clang-plugin') do |spec|
 
   next if spec.build.name != 'host'
 
-  fail 'llvm-config not found' unless find_executable 'llvm-config'
+  fail 'llvm-config not found' unless system 'llvm-config --version'
 
   HAS_HOST_MRUBY_CLANG_PLUGIN = true
   build.cc.flags += plugin_flags
