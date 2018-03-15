@@ -9,6 +9,7 @@ matrix:
           - llvm-toolchain-trusty
           packages:
           - libclang-3.8-dev
+          - llvm-3.8-dev
     - env: LLVM_VERSION=4.0
       addons:
         apt:
@@ -16,6 +17,7 @@ matrix:
           - llvm-toolchain-trusty-4.0
           packages:
           - libclang-4.0-dev
+          - llvm-4.0-dev
     - env: LLVM_VERSION=5.0
       addons:
         apt:
@@ -23,6 +25,7 @@ matrix:
           - llvm-toolchain-trusty-5.0
           packages:
           - libclang-5.0-dev
+          - llvm-5.0-dev
 sudo: false
 install:
   - git clone --depth 1 'https://github.com/mruby/mruby.git'
