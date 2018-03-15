@@ -6,6 +6,15 @@ MRuby::Gem::Specification.new('mruby-clang-plugin') do |spec|
   spec.objs = spec.objs.delete_if{|v| File.basename(v).include? 'mruby_clang_checker' }
   spec.test_objs = []
 
+  unless spec.build.toolchains.include?('clang')
+     print "Skipping non-clang toolchain.\n"
+     next
+  end
+  if spec.build.kind_of? MRuby::CrossBuild
+     print "Skipping cross build.\n"
+     next
+  end
+
   so_pos = File.expand_path "#{build.build_dir}/../host/mrbgems/mruby-clang-plugin/libmruby-clang-checker.so"
 
   plugin_flags = %W[-Xclang -load -Xclang #{so_pos} -Xclang -add-plugin -Xclang mruby-clang-checker]
@@ -14,8 +23,6 @@ MRuby::Gem::Specification.new('mruby-clang-plugin') do |spec|
     build.cxx.flags += plugin_flags
     next
   end
-
-  next if spec.build.name != 'host'
 
   fail 'llvm-config not found' unless system 'llvm-config --version'
   fail 'cmake not found' unless system 'cmake --version'
