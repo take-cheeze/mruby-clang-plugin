@@ -30,7 +30,7 @@ sudo: false
 install:
   - git clone --depth 1 'https://github.com/mruby/mruby.git'
   - export CXX="clang++ -std=c++11"
-  - cmake -DCMAKE_BUILD_TYPE=DEBUG -DLLVM_CONFIG="llvm-config-$LLVM_VERSION" -DMRUBY_ROOT="$(pwd)/mruby" -DTEST_CLANG="clang-$LLVM_VERSION" .
+  - cmake -DCMAKE_BUILD_TYPE=DEBUG -DLLVM_CONFIG="llvm-config-$LLVM_VERSION" -DMRUBY_ROOT="$(pwd)/mruby" -DTEST_CLANG="clang" .
 script:
   - make all test
 after_script:
