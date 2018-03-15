@@ -60,8 +60,7 @@ aux_source_directory("${CMAKE_CURRENT_SOURCE_DIR}/src" SRCS)
 set(library_name "mruby-clang-checker")
 add_library("${library_name}" MODULE "${SRCS}")
 target_link_libraries("${library_name}"
-  clangAST clangFrontend clangSerialization clangSema clangAnalysis clangBasic clangEdit clangLex
-  LLVMSupport)
+  clangAST clangFrontend clangSerialization clangSema clangAnalysis clangBasic clangEdit clangLex)
 
 set(plugin_file $<TARGET_FILE:${library_name}>)
 
