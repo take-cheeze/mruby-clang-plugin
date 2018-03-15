@@ -18,6 +18,7 @@ MRuby::Gem::Specification.new('mruby-clang-plugin') do |spec|
   next if spec.build.name != 'host'
 
   fail 'llvm-config not found' unless system 'llvm-config --version'
+  fail 'cmake not found' unless system 'cmake --version'
 
   HAS_HOST_MRUBY_CLANG_PLUGIN = true
   build.cc.flags += plugin_flags
