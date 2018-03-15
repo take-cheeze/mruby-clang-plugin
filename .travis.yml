@@ -1,20 +1,33 @@
 language: cpp
 compiler: clang
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-      - llvm-toolchain-precise
-    packages:
-      - clang-3.4
-      - libclang-3.4-dev
-      - llvm-3.4-dev
+matrix:
+  include:
+    - env: LLVM_VERSION=3.8
+      addons:
+        apt:
+          sources:
+          - llvm-toolchain-trusty
+          packages:
+          - libclang-3.8-dev
+    - env: LLVM_VERSION=4.0
+      addons:
+        apt:
+          sources:
+          - llvm-toolchain-trusty-4.0
+          packages:
+          - libclang-4.0-dev
+    - env: LLVM_VERSION=5.0
+      addons:
+        apt:
+          sources:
+          - llvm-toolchain-trusty-5.0
+          packages:
+          - libclang-5.0-dev
 sudo: false
 install:
-  - export LLVM_VERSION=3.4
   - git clone --depth 1 'https://github.com/mruby/mruby.git'
   - export CXX="clang++ -std=c++11"
-  - cmake -DCMAKE_BUILD_TYPE=DEBUG -DLLVM_CONFIG="llvm-config-$LLVM_VERSION" -DMRUBY_ROOT="$(pwd)/mruby" -DTEST_CLANG="clang" .
+  - cmake -DCMAKE_BUILD_TYPE=DEBUG -DLLVM_CONFIG="llvm-config-$LLVM_VERSION" -DMRUBY_ROOT="$(pwd)/mruby" -DTEST_CLANG="clang-$LLVM_VERSION" .
 script:
   - make all test
 after_script:

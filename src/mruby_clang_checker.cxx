@@ -31,7 +31,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
   std::unordered_set<std::string> mrb_functions = {
     "mrb_get_args",
     "mrb_funcall",
-    "mrb_funcall_id", 
+    "mrb_funcall_id",
     "mrb_raisef",
     "mrb_name_error",
     "mrb_no_method_error",
@@ -197,7 +197,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
 
         switch(i) {
           case '!':
-              continue;
+            continue;
 
           case 'o':
           case 'C':
