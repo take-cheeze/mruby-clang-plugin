@@ -166,6 +166,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
       }
 
       arg = exp->arg_begin() + d->param_size();
+      char prev_i = 0;
 
       for(auto const& i : format) {
 #if LLVM_VERSION_MAJOR > 4 || LLVM_VERSION_MINOR >= 0
@@ -181,7 +182,16 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
 #endif
 
         switch(i) {
-          case '!': arg = arg - 1; // check previous type
+          case '!':
+            // skip type checking
+            switch (prev_i) {
+            case 'S': case 'A': case 'H': case 'z': case '&':
+              continue;
+            case 'a': case 's': case '*':
+              continue;
+            // default:
+            }
+            break;
 
           case 'o':
           case 'C':
@@ -245,6 +255,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
         }
         if(get_type_name(*arg) != expected_type) { type_error(*arg); }
         ++arg;
+        prev_i = i;
       }
       assert(arg == exp->arg_end());
       return true;
