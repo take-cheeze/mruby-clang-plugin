@@ -3,7 +3,7 @@ MRuby::Gem::Specification.new('mruby-clang-plugin') do |spec|
   spec.license = 'MIT'
   spec.summary = 'clang plugin to check mruby API call mistakes.'
 
-  spec.objs = [spec.objs[-1]]
+  spec.objs = spec.objs.delete_if{|v| File.basename(v).include? 'mruby_clang_checker' }
   spec.test_objs = []
 
   so_pos = File.expand_path "#{build.build_dir}/../host/mrbgems/mruby-clang-plugin/libmruby-clang-checker.so"
