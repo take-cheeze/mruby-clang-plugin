@@ -71,6 +71,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
   llvm::Optional<unsigned> format_spec_arg_req(StringLiteral const& lit) {
     unsigned expected = 0;
     bool optional_begin = false;
+    char prev_i = 0;
     for(auto const& i : lit.getString()) {
       switch(i) {
         case '?':
@@ -97,7 +98,20 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
 
         case '|': optional_begin = true; break;
 
-        case '!': expected += 0; break;
+        case '!':
+          expected += 0;
+          // skip type checking
+          switch (prev_i) {
+          case 'S': case 'A': case 'H': case 'z': case '&':
+            continue;
+          case 'a': case 's': case '*':
+            continue;
+          case 0:
+          default:
+            diagnostics.Report(lit.getLocStart(), diag_ids.argument_type);
+            continue;
+          }
+          break;
 
         case 'd':
         case '*':
@@ -111,6 +125,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
           return llvm::None;
         }
       }
+      prev_i = i;
     }
     return expected;
   }
@@ -166,7 +181,6 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
       }
 
       arg = exp->arg_begin() + d->param_size();
-      char prev_i = 0;
 
       for(auto const& i : format) {
 #if LLVM_VERSION_MAJOR > 4 || LLVM_VERSION_MINOR >= 0
@@ -183,15 +197,7 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
 
         switch(i) {
           case '!':
-            // skip type checking
-            switch (prev_i) {
-            case 'S': case 'A': case 'H': case 'z': case '&':
               continue;
-            case 'a': case 's': case '*':
-              continue;
-            // default:
-            }
-            break;
 
           case 'o':
           case 'C':
@@ -255,7 +261,6 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
         }
         if(get_type_name(*arg) != expected_type) { type_error(*arg); }
         ++arg;
-        prev_i = i;
       }
       assert(arg == exp->arg_end());
       return true;
@@ -281,21 +286,17 @@ struct CheckMRuby : public ASTConsumer, public RecursiveASTVisitor<CheckMRuby> {
       }
     }
 
-#if LLVM_VERSION_MAJOR > 4 || LLVM_VERSION_MINOR >= 0
     for(auto i = exp->arg_begin() + d->param_size(); i != exp->arg_end(); ++i) {
       if((*i)->getType().getAsString() != "mrb_value") {
+#if LLVM_VERSION_MAJOR > 4 || LLVM_VERSION_MINOR >= 0
         diagnostics.Report((*i)->getLocStart(), diag_ids.argument_type)
             << FixItHint::CreateReplacement(SourceRange((*i)->getLocStart(), (*i)->getLocEnd()), "Expected `mrb_value`.");
-      }
-    }
 #else
-    for(auto i = exp->arg_begin() + d->param_size(); i != exp->arg_end(); ++i) {
-      if((*i)->getType().getAsString() != "mrb_value") {
         diagnostics.Report(i->getLocStart(), diag_ids.argument_type)
             << FixItHint::CreateReplacement(SourceRange(i->getLocStart(), i->getLocEnd()), "Expected `mrb_value`.");
+#endif
       }
     }
-#endif
 
     return true;
   }
